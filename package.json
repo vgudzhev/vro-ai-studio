@@ -1,0 +1,127 @@
+{
+  "publisher": "vro-dev",
+  "name": "vro-ai-studio",
+  "displayName": "vRO AI Studio",
+  "description": "AI-powered action generator, code reviewer, test generator and workflow explainer for VMware Aria Orchestrator",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Linters", "Testing"],
+  "keywords": ["vmware", "aria", "vro", "vrealize", "orchestrator", "ai"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:vroAiStudio.sidePanel",
+    "onLanguage:typescript",
+    "onLanguage:javascript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vroAiStudio.openPanel",
+        "title": "vRO AI Studio: Open Panel"
+      },
+      {
+        "command": "vroAiStudio.generateAction",
+        "title": "vRO AI Studio: Generate Action from Selection"
+      },
+      {
+        "command": "vroAiStudio.reviewCode",
+        "title": "vRO AI Studio: Review This File"
+      },
+      {
+        "command": "vroAiStudio.generateTests",
+        "title": "vRO AI Studio: Generate Tests for This File"
+      },
+      {
+        "command": "vroAiStudio.explainWorkflow",
+        "title": "vRO AI Studio: Explain Selected Code"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vroAiStudio.reviewCode",
+          "group": "vroAiStudio@1",
+          "when": "editorLangId == typescript || editorLangId == javascript"
+        },
+        {
+          "command": "vroAiStudio.generateTests",
+          "group": "vroAiStudio@2",
+          "when": "editorLangId == typescript || editorLangId == javascript"
+        },
+        {
+          "command": "vroAiStudio.explainWorkflow",
+          "group": "vroAiStudio@3",
+          "when": "editorHasSelection"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "vroAiStudio.openPanel",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "vRO AI Studio",
+      "properties": {
+        "vroAiStudio.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API key (or leave empty to use ANTHROPIC_API_KEY env var)"
+        },
+        "vroAiStudio.apiEndpoint": {
+          "type": "string",
+          "default": "https://api.anthropic.com/v1/messages",
+          "description": "Claude API endpoint — override for air-gapped / internal proxy deployments"
+        },
+        "vroAiStudio.model": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Claude model to use"
+        },
+        "vroAiStudio.autoReviewOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically review vRO files on save and show diagnostics"
+        },
+        "vroAiStudio.insertGeneratedCode": {
+          "type": "boolean",
+          "default": true,
+          "description": "Insert generated action code at cursor position"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vroAiStudio",
+          "title": "vRO AI Studio",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "vroAiStudio": [
+        {
+          "type": "webview",
+          "id": "vroAiStudio.sidePanel",
+          "name": "vRO AI Studio"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

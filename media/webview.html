@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>vRO AI Studio</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-sideBar-background);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .tabs{display:flex;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-tab-activeBackground);flex-shrink:0}
+    .tab{flex:1;padding:8px 2px;font-size:10px;cursor:pointer;border:none;background:transparent;color:var(--vscode-tab-inactiveForeground);border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+    .tab.active{color:var(--vscode-tab-activeForeground);border-bottom-color:var(--vscode-focusBorder)}
+    .tab:hover{color:var(--vscode-tab-activeForeground);background:var(--vscode-tab-hoverBackground)}
+    .panels{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+    .panel{display:none;padding:12px;flex-direction:column;gap:10px;flex:1;overflow-y:auto}
+    .panel.active{display:flex}
+    label{font-size:11px;color:var(--vscode-descriptionForeground);display:block;margin-bottom:3px}
+    textarea,select,input{width:100%;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:2px;padding:6px 8px;font-family:var(--vscode-editor-font-family);font-size:12px;resize:vertical;outline:none}
+    textarea:focus,select:focus,input:focus{border-color:var(--vscode-focusBorder)}
+    .btn{width:100%;padding:7px;font-size:12px;cursor:pointer;border:none;border-radius:2px;background:var(--vscode-button-background);color:var(--vscode-button-foreground);font-family:var(--vscode-font-family);transition:background .12s}
+    .btn:hover{background:var(--vscode-button-hoverBackground)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-sec{background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground)}
+    .btn-sec:hover{background:var(--vscode-button-secondaryHoverBackground)}
+    .output{background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:2px;padding:8px;font-family:var(--vscode-editor-font-family);font-size:12px;line-height:1.6;white-space:pre-wrap;min-height:60px;max-height:340px;overflow-y:auto;color:var(--vscode-editor-foreground)}
+    .output.muted{color:var(--vscode-descriptionForeground);font-style:italic}
+    .output.loading{color:var(--vscode-descriptionForeground);font-style:italic;border-color:var(--vscode-focusBorder)}
+    .output.error{color:var(--vscode-editorError-foreground)}
+    .issue{border-left:3px solid;padding:6px 10px;margin-bottom:6px;background:var(--vscode-editor-background);border-radius:0 2px 2px 0}
+    .issue.error{border-color:var(--vscode-editorError-foreground)}
+    .issue.warning{border-color:var(--vscode-editorWarning-foreground)}
+    .issue.info{border-color:var(--vscode-editorInfo-foreground)}
+    .issue-title{font-size:12px;font-weight:600;margin-bottom:2px}
+    .issue.error .issue-title{color:var(--vscode-editorError-foreground)}
+    .issue.warning .issue-title{color:var(--vscode-editorWarning-foreground)}
+    .issue.info .issue-title{color:var(--vscode-editorInfo-foreground)}
+    .issue-desc{font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.4}
+    .chips{display:flex;flex-wrap:wrap;gap:4px}
+    .chip{padding:3px 8px;font-size:11px;border:1px solid var(--vscode-input-border);border-radius:10px;cursor:pointer;color:var(--vscode-foreground);background:transparent;transition:all .12s}
+    .chip.on{background:var(--vscode-button-background);color:var(--vscode-button-foreground);border-color:var(--vscode-button-background)}
+    .row{display:flex;gap:8px}
+    .row>*{flex:1}
+    .divider{height:1px;background:var(--vscode-panel-border);margin:2px 0}
+    .hint{font-size:10px;color:var(--vscode-descriptionForeground);padding:4px 0}
+    .spinner{display:inline-block;width:10px;height:10px;border:2px solid var(--vscode-focusBorder);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;margin-right:5px;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .field{display:flex;flex-direction:column;gap:3px}
+    .out-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .out-actions{display:flex;gap:4px}
+    .btn-xs{width:auto;padding:2px 8px;font-size:11px}
+    /* Onboarding */
+    #tab-ob{padding:0;gap:0;overflow:hidden}
+    .ob-stage-bar{display:flex;border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0}
+    .ob-stage{flex:1;padding:5px 2px;font-size:9px;text-align:center;color:var(--vscode-descriptionForeground);border-bottom:2px solid transparent;line-height:1.3}
+    .ob-stage.done{color:var(--vscode-testing-iconPassed);border-bottom-color:var(--vscode-testing-iconPassed)}
+    .ob-stage.active{color:var(--vscode-tab-activeForeground);font-weight:600;border-bottom-color:var(--vscode-focusBorder)}
+    .ob-health{margin:8px 12px 0;padding:6px 8px;border-radius:2px;font-size:11px;line-height:1.5;flex-shrink:0;display:none}
+    .ob-health.ok{display:block;background:rgba(0,200,100,.12);color:var(--vscode-testing-iconPassed)}
+    .ob-health.warn{display:block;background:rgba(255,180,0,.12);color:var(--vscode-editorWarning-foreground)}
+    .ob-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-height:0}
+    .ob-msg{display:flex;gap:6px;align-items:flex-start}
+    .ob-msg.user{flex-direction:row-reverse}
+    .ob-av{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;background:rgba(0,200,100,.15);color:var(--vscode-testing-iconPassed)}
+    .ob-av.user{background:rgba(0,120,255,.15);color:var(--vscode-focusBorder)}
+    .ob-bubble{padding:7px 10px;border-radius:4px;font-size:12px;line-height:1.55;max-width:88%;color:var(--vscode-foreground);background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border)}
+    .ob-bubble.user{background:rgba(0,120,255,.08);border-color:transparent}
+    .ob-bubble code{font-family:var(--vscode-editor-font-family);font-size:11px;background:var(--vscode-sideBar-background);padding:1px 4px;border-radius:2px;border:1px solid var(--vscode-panel-border)}
+    .ob-bubble pre{font-family:var(--vscode-editor-font-family);font-size:11px;background:var(--vscode-sideBar-background);padding:7px 9px;border-radius:2px;margin-top:5px;overflow-x:auto;white-space:pre-wrap;border:1px solid var(--vscode-panel-border)}
+    .ob-quick{display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px;border-top:1px solid var(--vscode-panel-border);flex-shrink:0}
+    .ob-qchip{padding:3px 9px;font-size:10px;border:1px solid var(--vscode-input-border);border-radius:10px;cursor:pointer;color:var(--vscode-descriptionForeground);background:transparent;white-space:nowrap;font-family:var(--vscode-font-family);transition:all .1s}
+    .ob-qchip:hover{color:var(--vscode-foreground);border-color:var(--vscode-focusBorder)}
+    .ob-input-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid var(--vscode-panel-border);flex-shrink:0}
+    .ob-input-row input{flex:1;font-size:12px}
+    .ob-send{width:auto;padding:6px 12px;font-size:11px;flex-shrink:0}
+    .ob-dot{width:5px;height:5px;border-radius:50%;background:var(--vscode-descriptionForeground);animation:ob-b .9s infinite;display:inline-block;margin:0 1px}
+    .ob-dot:nth-child(2){animation-delay:.15s}
+    .ob-dot:nth-child(3){animation-delay:.3s}
+    @keyframes ob-b{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+  </style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('gen')">Generate</button>
+  <button class="tab" onclick="showTab('rev')">Review</button>
+  <button class="tab" onclick="showTab('test')">Tests</button>
+  <button class="tab" onclick="showTab('exp')">Explain</button>
+  <button class="tab" onclick="showTab('ob')">Onboard</button>
+</div>
+
+<div class="panels">
+
+  <!-- GENERATE -->
+  <div class="panel active" id="tab-gen">
+    <div class="field">
+      <label>What should this action do?</label>
+      <textarea id="gen-prompt" rows="4" placeholder="e.g. Get all powered-off VMs in a datacenter filtered by tag, return names and memory sizes"></textarea>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Inputs</label>
+        <input id="gen-inputs" placeholder="vm: VcVirtualMachine, tag: string"/>
+      </div>
+      <div class="field">
+        <label>Returns</label>
+        <select id="gen-return">
+          <option>string[]</option><option>Properties</option>
+          <option>VcVirtualMachine[]</option><option>void</option>
+          <option>boolean</option><option>number</option><option>any</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Include</label>
+      <div class="chips">
+        <button class="chip on" data-group="gen">logging</button>
+        <button class="chip on" data-group="gen">error handling</button>
+        <button class="chip" data-group="gen">retry logic</button>
+        <button class="chip" data-group="gen">JSDoc</button>
+        <button class="chip" data-group="gen">strict types</button>
+      </div>
+    </div>
+    <button class="btn" id="gen-btn" onclick="generate()">Generate Action</button>
+    <div class="divider"></div>
+    <div class="out-header">
+      <label>Output</label>
+      <div class="out-actions">
+        <button class="btn btn-sec btn-xs" onclick="insertToEditor('gen-out')">Insert at cursor</button>
+        <button class="btn btn-sec btn-xs" onclick="copyText('gen-out')">Copy</button>
+      </div>
+    </div>
+    <div class="output muted" id="gen-out">Describe your action above and click Generate.</div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="panel" id="tab-rev">
+    <div class="hint">Tip: right-click any vRO file -> Review This File, or paste code below.</div>
+    <div class="field">
+      <label>Code to review</label>
+      <textarea id="rev-code" rows="8" placeholder="Paste vRO TypeScript/JavaScript here..."></textarea>
+    </div>
+    <div class="field">
+      <label>Focus on</label>
+      <div class="chips">
+        <button class="chip on" data-group="rev">anti-patterns</button>
+        <button class="chip on" data-group="rev">blocking calls</button>
+        <button class="chip on" data-group="rev">security</button>
+        <button class="chip" data-group="rev">performance</button>
+        <button class="chip" data-group="rev">naming</button>
+      </div>
+    </div>
+    <button class="btn" id="rev-btn" onclick="review()">Review Code</button>
+    <div class="divider"></div>
+    <label>Findings</label>
+    <div id="rev-out"><div class="output muted">No findings yet.</div></div>
+  </div>
+
+  <!-- TESTS -->
+  <div class="panel" id="tab-test">
+    <div class="hint">Tip: right-click any vRO file -> Generate Tests for This File.</div>
+    <div class="field">
+      <label>Action code to test</label>
+      <textarea id="test-code" rows="8" placeholder="Paste your vRO TypeScript action here..."></textarea>
+    </div>
+    <div class="field">
+      <label>Cover</label>
+      <div class="chips">
+        <button class="chip on" data-group="test">happy path</button>
+        <button class="chip on" data-group="test">null inputs</button>
+        <button class="chip on" data-group="test">empty results</button>
+        <button class="chip" data-group="test">API errors</button>
+        <button class="chip" data-group="test">edge cases</button>
+      </div>
+    </div>
+    <button class="btn" id="test-btn" onclick="genTests()">Generate Tests</button>
+    <div class="divider"></div>
+    <div class="out-header">
+      <label>Output</label>
+      <div class="out-actions">
+        <button class="btn btn-sec btn-xs" onclick="saveTestFile()">Save as .spec.ts</button>
+        <button class="btn btn-sec btn-xs" onclick="copyText('test-out')">Copy</button>
+      </div>
+    </div>
+    <div class="output muted" id="test-out">Paste an action above and click Generate Tests.</div>
+  </div>
+
+  <!-- EXPLAIN -->
+  <div class="panel" id="tab-exp">
+    <div class="hint">Tip: select code in editor -> right-click -> Explain Selected Code.</div>
+    <div class="field">
+      <label>Code to explain</label>
+      <textarea id="exp-code" rows="8" placeholder="Paste vRO workflow script or action here..."></textarea>
+    </div>
+    <div class="field">
+      <label>Output format</label>
+      <select id="exp-format">
+        <option value="plain">Plain English summary</option>
+        <option value="docs">Markdown documentation</option>
+        <option value="readme">README section</option>
+        <option value="runbook">Ops runbook entry</option>
+      </select>
+    </div>
+    <button class="btn" id="exp-btn" onclick="explain()">Explain</button>
+    <div class="divider"></div>
+    <div class="out-header">
+      <label>Output</label>
+      <div class="out-actions">
+        <button class="btn btn-sec btn-xs" onclick="copyText('exp-out')">Copy</button>
+      </div>
+    </div>
+    <div class="output muted" id="exp-out">Paste code above and click Explain.</div>
+  </div>
+
+  <!-- ONBOARDING -->
+  <div class="panel" id="tab-ob">
+    <div class="ob-stage-bar">
+      <div class="ob-stage active" id="obs0">1. OS &amp; deps</div>
+      <div class="ob-stage" id="obs1">2. Maven</div>
+      <div class="ob-stage" id="obs2">3. Project</div>
+      <div class="ob-stage" id="obs3">4. Connect</div>
+      <div class="ob-stage" id="obs4">5. Push</div>
+    </div>
+    <div class="ob-health" id="ob-health"></div>
+    <div class="ob-msgs" id="ob-msgs"></div>
+    <div class="ob-quick" id="ob-quick"></div>
+    <div class="ob-input-row">
+      <input id="ob-inp" placeholder="Ask anything about VRBT setup..." />
+      <button class="btn ob-send" id="ob-send" onclick="obSend()">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const vscode = acquireVsCodeApi();
+const ALL_TABS = ['gen','rev','test','exp','ob'];
+
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.classList.toggle('active', ALL_TABS[i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(function(p) {
+    p.classList.remove('active');
+  });
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'ob' && document.getElementById('ob-msgs').children.length === 0) {
+    vscode.postMessage({ type: 'obInit' });
+  }
+}
+
+document.querySelectorAll('.chip').forEach(function(c) {
+  c.addEventListener('click', function() { c.classList.toggle('on'); });
+});
+
+function getChips(group) {
+  var chips = document.querySelectorAll('.chip[data-group="' + group + '"].on');
+  return Array.prototype.map.call(chips, function(c) { return c.textContent.trim(); });
+}
+
+function setLoading(btnId, outId, msg) {
+  var btn = document.getElementById(btnId);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Working...';
+  if (outId) {
+    var el = document.getElementById(outId);
+    if (el) { el.className = 'output loading'; el.textContent = msg; }
+  }
+}
+
+function resetBtn(btnId, label) {
+  var btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = false; btn.textContent = label; }
+}
+
+function copyText(id) {
+  var el = document.getElementById(id);
+  if (el) navigator.clipboard.writeText(el.textContent);
+}
+
+function insertToEditor(id) {
+  var el = document.getElementById(id);
+  if (el) vscode.postMessage({ type: 'insertCode', code: el.textContent });
+}
+
+function saveTestFile() {
+  var el = document.getElementById('test-out');
+  if (el) vscode.postMessage({ type: 'saveTestFile', code: el.textContent });
+}
+
+function showError(outId, message) {
+  var el = document.getElementById(outId);
+  if (el) { el.className = 'output error'; el.textContent = 'Error: ' + message; }
+}
+
+function generate() {
+  var prompt = document.getElementById('gen-prompt').value.trim();
+  if (!prompt) return;
+  setLoading('gen-btn', 'gen-out', 'Generating...');
+  vscode.postMessage({
+    type: 'generate',
+    prompt: prompt,
+    inputs: document.getElementById('gen-inputs').value,
+    returnType: document.getElementById('gen-return').value,
+    chips: getChips('gen')
+  });
+}
+
+function review() {
+  var code = document.getElementById('rev-code').value.trim();
+  if (!code) return;
+  var btn = document.getElementById('rev-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Working...';
+  document.getElementById('rev-out').innerHTML = '<div class="output loading">Analyzing...</div>';
+  vscode.postMessage({ type: 'review', code: code, chips: getChips('rev') });
+}
+
+function genTests() {
+  var code = document.getElementById('test-code').value.trim();
+  if (!code) return;
+  setLoading('test-btn', 'test-out', 'Generating test suite...');
+  vscode.postMessage({ type: 'genTests', code: code, chips: getChips('test') });
+}
+
+function explain() {
+  var code = document.getElementById('exp-code').value.trim();
+  if (!code) return;
+  setLoading('exp-btn', 'exp-out', 'Analyzing workflow...');
+  vscode.postMessage({
+    type: 'explain',
+    code: code,
+    format: document.getElementById('exp-format').value
+  });
+}
+
+/* ── Onboarding ── */
+var OB_CHIPS = [
+  ['Check my Java version','Run health script','Windows setup','Mac/Linux setup'],
+  ['Show settings.xml template','Where is ~/.m2?','Add vRO connection profile','What is the packaging profile?'],
+  ['Create TypeScript project','Which archetype for vRA+vRO?','Show project structure','Polyglot project'],
+  ['Get a refresh token','SSL certificate error','Test my connection','Embedded vs standalone vRO'],
+  ['Run mvn vro:push','Compile errors help','Push failed - diagnose','What does vro:pull do?']
+];
+var obStage = 0;
+var obBusy = false;
+
+function obSetStage(n) {
+  obStage = Math.min(n, 4);
+  for (var i = 0; i < 5; i++) {
+    var el = document.getElementById('obs' + i);
+    if (i < obStage) el.className = 'ob-stage done';
+    else if (i === obStage) el.className = 'ob-stage active';
+    else el.className = 'ob-stage';
+  }
+  obRenderChips();
+}
+
+function obRenderChips() {
+  var q = document.getElementById('ob-quick');
+  q.innerHTML = '';
+  OB_CHIPS[obStage].forEach(function(c) {
+    var b = document.createElement('button');
+    b.className = 'ob-qchip';
+    b.textContent = c;
+    b.onclick = function() { document.getElementById('ob-inp').value = c; obSend(); };
+    q.appendChild(b);
+  });
+}
+
+function obFmt(text) {
+  var s = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  s = s.replace(/```([\s\S]*?)```/g, function(_, code) {
+    return '<pre>' + code.trim() + '</pre>';
+  });
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+  return s;
+}
+
+function obAddMsg(role, html) {
+  var msgs = document.getElementById('ob-msgs');
+  var wrap = document.createElement('div');
+  wrap.className = 'ob-msg ' + role;
+  var av = document.createElement('div');
+  av.className = 'ob-av ' + role;
+  av.textContent = role === 'bot' ? 'vRO' : 'You';
+  var bub = document.createElement('div');
+  bub.className = 'ob-bubble ' + role;
+  bub.innerHTML = html;
+  wrap.appendChild(av);
+  wrap.appendChild(bub);
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function obTyping(show) {
+  if (show) {
+    var msgs = document.getElementById('ob-msgs');
+    var wrap = document.createElement('div');
+    wrap.className = 'ob-msg bot'; wrap.id = 'ob-typ';
+    var av = document.createElement('div');
+    av.className = 'ob-av bot'; av.textContent = 'vRO';
+    var bub = document.createElement('div');
+    bub.className = 'ob-bubble bot';
+    bub.style.padding = '10px 14px';
+    bub.innerHTML = '<span class="ob-dot"></span><span class="ob-dot"></span><span class="ob-dot"></span>';
+    wrap.appendChild(av); wrap.appendChild(bub);
+    msgs.appendChild(wrap); msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    var el = document.getElementById('ob-typ');
+    if (el) el.remove();
+  }
+}
+
+function obDetect(text) {
+  var l = text.toLowerCase();
+  if (obStage < 1 && (l.indexOf('settings.xml') >= 0 || l.indexOf('packaging profile') >= 0)) obSetStage(1);
+  else if (obStage < 2 && (l.indexOf('archetype') >= 0 || l.indexOf('first project') >= 0)) obSetStage(2);
+  else if (obStage < 3 && (l.indexOf('refresh token') >= 0 || l.indexOf('vro.host') >= 0 || l.indexOf('vro:pull') >= 0)) obSetStage(3);
+  else if (obStage < 4 && (l.indexOf('vro:push') >= 0 || l.indexOf('first push') >= 0)) obSetStage(4);
+}
+
+function obSend() {
+  if (obBusy) return;
+  var inp = document.getElementById('ob-inp');
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  obBusy = true;
+  document.getElementById('ob-send').disabled = true;
+  obAddMsg('user', obFmt(text));
+  obDetect(text);
+  obTyping(true);
+  vscode.postMessage({ type: 'obChat', text: text });
+}
+
+document.getElementById('ob-inp').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); obSend(); }
+});
+
+/* ── Message bus ── */
+window.addEventListener('message', function(e) {
+  var msg = e.data;
+
+  if (msg.type === 'result') {
+    var el = document.getElementById(msg.target);
+    if (el) { el.className = 'output'; el.textContent = msg.text; }
+    resetBtn(msg.btn, msg.label);
+
+  } else if (msg.type === 'reviewResult') {
+    resetBtn('rev-btn', 'Review Code');
+    var issues = msg.issues || [];
+    if (!issues.length) {
+      document.getElementById('rev-out').innerHTML = '<div class="output" style="color:var(--vscode-testing-iconPassed)">No issues found!</div>';
+      return;
+    }
+    var sevMap = { error: 'Error', warning: 'Warning', info: 'Info' };
+    var html = '';
+    for (var i = 0; i < issues.length; i++) {
+      var issue = issues[i];
+      html += '<div class="issue ' + issue.severity + '">'
+            + '<div class="issue-title">' + (sevMap[issue.severity] || 'Info') + ': ' + issue.title + '</div>'
+            + '<div class="issue-desc">' + issue.description + '</div>'
+            + '</div>';
+    }
+    document.getElementById('rev-out').innerHTML = html;
+
+  } else if (msg.type === 'fillCode') {
+    var tabMap = { review: 'rev', tests: 'test', explain: 'exp' };
+    var codeMap = { review: 'rev-code', tests: 'test-code', explain: 'exp-code' };
+    if (tabMap[msg.source]) showTab(tabMap[msg.source]);
+    if (codeMap[msg.source]) document.getElementById(codeMap[msg.source]).value = msg.code;
+
+  } else if (msg.type === 'obGreet') {
+    obAddMsg('bot', obFmt(msg.text));
+    obRenderChips();
+    if (msg.health) {
+      var h = document.getElementById('ob-health');
+      h.className = 'ob-health ' + (msg.healthOk ? 'ok' : 'warn');
+      h.textContent = msg.health;
+    }
+
+  } else if (msg.type === 'obReply') {
+    obTyping(false);
+    obAddMsg('bot', obFmt(msg.text));
+    obDetect(msg.text);
+    obBusy = false;
+    document.getElementById('ob-send').disabled = false;
+
+  } else if (msg.type === 'error') {
+    var errMsg = msg.message || 'Unknown error';
+    showError('gen-out', errMsg);
+    showError('test-out', errMsg);
+    showError('exp-out', errMsg);
+    document.getElementById('rev-out').innerHTML = '<div class="output error">Error: ' + errMsg + '</div>';
+    obTyping(false);
+    if (obBusy) {
+      obAddMsg('bot', obFmt('Error: ' + errMsg));
+      obBusy = false;
+      document.getElementById('ob-send').disabled = false;
+    }
+    resetBtn('gen-btn', 'Generate Action');
+    resetBtn('rev-btn', 'Review Code');
+    resetBtn('test-btn', 'Generate Tests');
+    resetBtn('exp-btn', 'Explain');
+  }
+});
+</script>
+</body>
+</html>
