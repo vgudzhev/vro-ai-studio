@@ -57,7 +57,7 @@ Build a `.vsix` file for distribution:
 
 ```bash
 npm run package
-# Produces: vro-ai-studio-0.1.0.vsix
+# Produces: vro-ai-studio-0.2.0.vsix
 ```
 
 ---
@@ -67,7 +67,7 @@ npm run package
 ### From a local `.vsix`
 
 ```bash
-code --install-extension vro-ai-studio-0.1.0.vsix
+code --install-extension vro-ai-studio-0.2.0.vsix
 ```
 
 Or in VS Code: **Extensions** → `...` menu → **Install from VSIX…**
@@ -91,6 +91,8 @@ Open **Settings** and search for `vroAiStudio`, or edit `settings.json` directly
 | `vroAiStudio.model` | `claude-sonnet-4-20250514` | Claude model to use |
 | `vroAiStudio.autoReviewOnSave` | `false` | Show vRO diagnostics in the Problems panel on every save |
 | `vroAiStudio.insertGeneratedCode` | `true` | Auto-insert generated action code at cursor position |
+| `vroAiStudio.codingStandardsFile` | `""` | Path to a plain-text file of team coding standards (e.g. `~/.vro-standards.md`); injected into Generate and Review prompts |
+| `vroAiStudio.utilityReposFile` | `""` | Path to a file listing internal utility/library repos _(setting exists, feature not yet implemented)_ |
 
 ### Air-gapped / proxy setup
 

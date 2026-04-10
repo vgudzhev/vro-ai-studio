@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 import { callClaude, reviewCode, SYSTEM_PROMPTS, ReviewIssue } from './claudeClient';
 import { VroDiagnosticsProvider } from './diagnosticsProvider';
 import { getWebviewContent } from './webviewContent';
@@ -8,6 +10,17 @@ import {
   formatContextForPrompt,
   ONBOARDING_SYSTEM,
 } from './onboardingProvider';
+
+function getStandards(): string {
+  const filePath = vscode.workspace.getConfiguration('vroAiStudio').get<string>('codingStandardsFile') || '';
+  if (!filePath) return '';
+  const expanded = filePath.replace(/^~/, os.homedir());
+  try {
+    return fs.readFileSync(expanded, 'utf8').trim();
+  } catch {
+    return '';
+  }
+}
 
 let panel: vscode.WebviewPanel | undefined;
 const diagnostics = new VroDiagnosticsProvider();
@@ -122,7 +135,11 @@ async function handleWebviewMessage(msg: any, webview: vscode.Webview) {
 
       case 'generate': {
         const chips: string[] = msg.chips || [];
-        const system = `${SYSTEM_PROMPTS.generator}\nInclude: ${chips.join(', ')}.`;
+        const standards = getStandards();
+        const standardsBlock = standards
+          ? `\n\nTEAM CODING STANDARDS (generated code MUST conform to all of these):\n${standards}`
+          : '';
+        const system = `${SYSTEM_PROMPTS.generator}\nInclude: ${chips.join(', ')}.${standardsBlock}`;
         const user = `Generate a vRO TypeScript action that: ${msg.prompt}
 Input parameters: ${msg.inputs || 'none'}
 Return type: ${msg.returnType || 'void'}
@@ -136,8 +153,12 @@ Use proper vRO TypeScript patterns with vro-types. ES5-compatible.`;
 
       case 'review': {
         const chips: string[] = msg.chips || [];
+        const standards = getStandards();
+        const standardsBlock = standards
+          ? `\n\nTEAM CODING STANDARDS (also flag violations of these as additional issues):\n${standards}`
+          : '';
         const system = `You are a senior VMware Aria Orchestrator code reviewer.
-Analyze vRO TypeScript/JavaScript for: ${chips.join(', ')}.
+Analyze vRO TypeScript/JavaScript for: ${chips.join(', ')}.${standardsBlock}
 Respond ONLY with a JSON array: [{"severity":"error"|"warning"|"info","title":"...","description":"..."}]
 No markdown fences, no extra text.`;
         out.appendLine('[review] calling Claude...');

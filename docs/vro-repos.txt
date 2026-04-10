@@ -1,0 +1,68 @@
+# vRO Utility / Library Repos
+# One repo per block. Blank lines separate entries.
+# Fields: name, url, description, module-path, and optional usage-notes.
+# Lines starting with '#' are comments and are ignored.
+
+name: vro-common-utils
+url: https://github.com/your-org/vro-common-utils
+description: Shared utility actions for string manipulation, date formatting, and collection helpers
+module-path: com.company.common.utils
+tags: strings, dates, collections, helpers
+
+name: vro-rest-helpers
+url: https://github.com/your-org/vro-rest-helpers
+description: Wrapper actions around the vRO REST plugin — handles auth, retries, pagination, and error normalisation
+module-path: com.company.common.rest
+tags: rest, http, authentication, retry
+
+name: vro-vcenter-lib
+url: https://github.com/your-org/vro-vcenter-lib
+description: High-level vCenter operations (VM lifecycle, snapshot management, datastore queries) built on top of the vCenter plugin
+module-path: com.company.vcenter
+tags: vcenter, vm, snapshot, datastore
+
+name: vro-nsx-lib
+url: https://github.com/your-org/vro-nsx-lib
+description: NSX-T REST API wrappers — segments, logical routers, security groups, and NAT rules
+module-path: com.company.nsx
+tags: nsx, networking, security-groups, nat
+
+name: vro-logging
+url: https://github.com/your-org/vro-logging
+description: Structured logging helpers that prefix messages with action name, timestamp, and correlation ID
+module-path: com.company.common.logging
+tags: logging, observability, debug
+usage-notes: Import logInfo/logWarn/logError instead of calling System.log directly
+
+name: vro-config-reader
+url: https://github.com/your-org/vro-config-reader
+description: Typed wrappers for reading vRO Configuration Elements; centralises the ConfigurationElement API
+module-path: com.company.common.config
+tags: configuration, settings, config-elements
+usage-notes: Never read ConfigurationElements directly — use getConfigValue(category, name) from this lib
+
+name: vro-crypto-utils
+url: https://github.com/your-org/vro-crypto-utils
+description: Credential encryption/decryption helpers using vRO's built-in SecureString and CryptoManager
+module-path: com.company.common.crypto
+tags: security, encryption, credentials, secrets
+
+name: vro-retry
+url: https://github.com/your-org/vro-retry
+description: Generic retry-with-backoff action — configurable attempts, delay, and jitter; supports exponential backoff
+module-path: com.company.common.retry
+tags: resilience, retry, backoff, fault-tolerance
+usage-notes: Default max retries = 3, initial delay = 500ms, multiplier = 2
+
+name: vro-approval-workflows
+url: https://github.com/your-org/vro-approval-workflows
+description: Reusable approval-gate workflows with email notification, escalation timers, and audit logging
+module-path: com.company.governance.approval
+tags: approval, governance, notifications, audit
+
+name: vro-test-helpers
+url: https://github.com/your-org/vro-test-helpers
+description: Jasmine test utilities — mock factories for VcPlugin, RESTHost, and ConfigurationElement objects
+module-path: com.company.testing
+tags: testing, jasmine, mocks, unit-tests
+usage-notes: Import createMockVm() / createMockRestRequest() in spec files instead of hand-rolling mocks

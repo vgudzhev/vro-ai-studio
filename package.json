@@ -3,7 +3,7 @@
   "name": "vro-ai-studio",
   "displayName": "vRO AI Studio",
   "description": "AI-powered action generator, code reviewer, test generator and workflow explainer for VMware Aria Orchestrator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other", "Linters", "Testing"],
   "keywords": ["vmware", "aria", "vro", "vrealize", "orchestrator", "ai"],
@@ -89,6 +89,16 @@
           "type": "boolean",
           "default": true,
           "description": "Insert generated action code at cursor position"
+        },
+        "vroAiStudio.codingStandardsFile": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a file containing your team's vRO coding standards (e.g. ~/.vro-standards.md). Its contents are injected into Review and Generate prompts automatically."
+        },
+        "vroAiStudio.utilityReposFile": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a file listing your internal vRO utility/library repos (e.g. ~/.vro-repos.txt)."
         }
       }
     },

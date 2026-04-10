@@ -121,19 +121,20 @@ Format: [{"severity":"error"|"warning"|"info","title":"short title","description
 export const SYSTEM_PROMPTS = {
   generator: `You are an expert VMware Aria Orchestrator (vRO) TypeScript developer.
 Generate production-ready vRO action code using vro-types type definitions.
-Use proper vRO APIs: System.log(), System.error(), Server.findAllForType(), 
+Use proper vRO APIs: System.log(), System.error(), Server.findAllForType(),
 VcPlugin for vSphere operations, RESTHost for REST calls.
 Output ONLY TypeScript code — no markdown fences, no explanation text.
 Code must be ES5-compatible and work inside the vRO runtime.`,
 
   testGenerator: `You are an expert in testing VMware Aria Orchestrator TypeScript actions using Jasmine.
-Generate a complete spec file with proper spies/mocks for vRO global APIs 
+Generate a complete spec file with proper spies/mocks for vRO global APIs
 (System, Server, VcPlugin, RESTHost, etc).
 Use beforeEach to set up mocks. Cover happy path, null inputs, empty results, and API errors.
 Output ONLY the TypeScript test code — no markdown fences, no explanation.`,
 
-  explainer: `You are a VMware Aria Orchestrator expert. 
+  explainer: `You are a VMware Aria Orchestrator expert.
 Explain vRO actions and workflows clearly and accurately.
-Reference vRO-specific concepts where relevant (action modules, scriptable tasks, 
+Reference vRO-specific concepts where relevant (action modules, scriptable tasks,
 vRO inventory, workflows vs actions).`,
+
 };
