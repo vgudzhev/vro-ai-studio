@@ -23,7 +23,7 @@ AI-powered VS Code extension for **VMware Aria Orchestrator (vRO)** developers. 
 - Node.js 18+
 - npm 9+
 - VS Code 1.85+
-- An [Anthropic API key](https://console.anthropic.com/)
+- An [Anthropic API key](https://console.anthropic.com/) **or** a local LLM (Ollama / AnythingLLM)
 
 ---
 
@@ -57,7 +57,7 @@ Build a `.vsix` file for distribution:
 
 ```bash
 npm run package
-# Produces: vro-ai-studio-0.2.0.vsix
+# Produces: vro-ai-studio-0.3.1.vsix
 ```
 
 ---
@@ -67,7 +67,7 @@ npm run package
 ### From a local `.vsix`
 
 ```bash
-code --install-extension vro-ai-studio-0.2.0.vsix
+code --install-extension vro-ai-studio-0.3.1.vsix
 ```
 
 Or in VS Code: **Extensions** → `...` menu → **Install from VSIX…**
@@ -89,6 +89,10 @@ Open **Settings** and search for `vroAiStudio`, or edit `settings.json` directly
 | `vroAiStudio.apiKey` | `""` | Anthropic API key (falls back to `ANTHROPIC_API_KEY` env var) |
 | `vroAiStudio.apiEndpoint` | `https://api.anthropic.com/v1/messages` | Override for air-gapped / internal proxy deployments |
 | `vroAiStudio.model` | `claude-sonnet-4-20250514` | Claude model to use |
+| `vroAiStudio.llmProvider` | `claude` | Backend to use: `claude`, `local` (OpenAI-compatible, e.g. Ollama), or `anythingllm` |
+| `vroAiStudio.localLlmEndpoint` | `http://localhost:3001` | Base URL for the local LLM. AnythingLLM: base URL only. OpenAI-compatible: full chat-completions URL (e.g. `http://localhost:11434/v1/chat/completions`) |
+| `vroAiStudio.localLlmApiKey` | `""` | Bearer token / API key for the local LLM |
+| `vroAiStudio.localLlmModel` | `""` | AnythingLLM: workspace slug. OpenAI-compatible: model name (e.g. `llama3`) |
 | `vroAiStudio.autoReviewOnSave` | `false` | Show vRO diagnostics in the Problems panel on every save |
 | `vroAiStudio.insertGeneratedCode` | `true` | Auto-insert generated action code at cursor position |
 | `vroAiStudio.codingStandardsFile` | `""` | Path to a plain-text file of team coding standards (e.g. `~/.vro-standards.md`); injected into Generate and Review prompts |
@@ -104,6 +108,33 @@ Open **Settings** and search for `vroAiStudio`, or edit `settings.json` directly
 ```
 
 The extension uses Node's built-in `https` module — **no external runtime dependencies**.
+
+### Local LLM setup
+
+Run fully offline against a local model. Two backends are supported:
+
+**Ollama (or any OpenAI-compatible server)**
+
+```json
+{
+  "vroAiStudio.llmProvider": "local",
+  "vroAiStudio.localLlmEndpoint": "http://localhost:11434/v1/chat/completions",
+  "vroAiStudio.localLlmModel": "llama3"
+}
+```
+
+**AnythingLLM** (uses the native workspace chat API)
+
+```json
+{
+  "vroAiStudio.llmProvider": "anythingllm",
+  "vroAiStudio.localLlmEndpoint": "http://localhost:3001",
+  "vroAiStudio.localLlmApiKey": "your-anythingllm-api-key",
+  "vroAiStudio.localLlmModel": "your-workspace-slug"
+}
+```
+
+When `llmProvider` is set to `local` or `anythingllm`, the Anthropic key/endpoint settings are ignored.
 
 ### Suggested keybindings
 

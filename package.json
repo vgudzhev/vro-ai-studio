@@ -3,7 +3,7 @@
   "name": "vro-ai-studio",
   "displayName": "vRO AI Studio",
   "description": "AI-powered action generator, code reviewer, test generator and workflow explainer for VMware Aria Orchestrator",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other", "Linters", "Testing"],
   "keywords": ["vmware", "aria", "vro", "vrealize", "orchestrator", "ai"],
@@ -79,6 +79,32 @@
           "type": "string",
           "default": "claude-sonnet-4-20250514",
           "description": "Claude model to use"
+        },
+        "vroAiStudio.llmProvider": {
+          "type": "string",
+          "enum": ["claude", "local", "anythingllm"],
+          "enumDescriptions": [
+            "Use the Anthropic Claude API (default)",
+            "Use a local OpenAI-compatible API (e.g. Ollama)",
+            "Use AnythingLLM via its native workspace chat API"
+          ],
+          "default": "claude",
+          "description": "Which LLM backend to use for all AI operations"
+        },
+        "vroAiStudio.localLlmEndpoint": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "Base URL for the local LLM. For AnythingLLM: http://localhost:3001. For OpenAI-compatible (Ollama): full path e.g. http://localhost:11434/v1/chat/completions"
+        },
+        "vroAiStudio.localLlmApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Bearer token / API key for the local LLM"
+        },
+        "vroAiStudio.localLlmModel": {
+          "type": "string",
+          "default": "",
+          "description": "For AnythingLLM: workspace slug (e.g. 'my-workspace'). For OpenAI-compatible: model name (e.g. 'llama3')."
         },
         "vroAiStudio.autoReviewOnSave": {
           "type": "boolean",

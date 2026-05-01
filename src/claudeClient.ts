@@ -17,10 +17,14 @@ export interface ReviewIssue {
 
 function getConfig() {
   const cfg = vscode.workspace.getConfiguration('vroAiStudio');
-  const apiKey = cfg.get<string>('apiKey') || process.env.ANTHROPIC_API_KEY || '';
-  const endpoint = cfg.get<string>('apiEndpoint') || 'https://api.anthropic.com/v1/messages';
-  const model = cfg.get<string>('model') || 'claude-sonnet-4-20250514';
-  return { apiKey, endpoint, model };
+  const apiKey           = cfg.get<string>('apiKey')           || process.env.ANTHROPIC_API_KEY || '';
+  const endpoint         = cfg.get<string>('apiEndpoint')      || 'https://api.anthropic.com/v1/messages';
+  const model            = cfg.get<string>('model')            || 'claude-sonnet-4-20250514';
+  const llmProvider      = (cfg.get<string>('llmProvider')     || 'claude') as 'claude' | 'local' | 'anythingllm';
+  const localLlmEndpoint = cfg.get<string>('localLlmEndpoint') || 'http://localhost:3001';
+  const localLlmApiKey   = cfg.get<string>('localLlmApiKey')   || '';
+  const localLlmModel    = cfg.get<string>('localLlmModel')    || '';
+  return { apiKey, endpoint, model, llmProvider, localLlmEndpoint, localLlmApiKey, localLlmModel };
 }
 
 export async function callClaude(
@@ -28,24 +32,81 @@ export async function callClaude(
   userPrompt: string,
   onChunk?: (text: string) => void
 ): Promise<string> {
-  const { apiKey, endpoint, model } = getConfig();
+  const { apiKey, endpoint, model,
+          llmProvider, localLlmEndpoint, localLlmApiKey, localLlmModel } = getConfig();
 
-  if (!apiKey) {
+  const isLocal       = llmProvider === 'local';
+  const isAnythingLLM = llmProvider === 'anythingllm';
+
+  if (!isLocal && !isAnythingLLM && !apiKey) {
     throw new Error(
       'No API key configured. Set vroAiStudio.apiKey in Settings or export ANTHROPIC_API_KEY.'
     );
   }
+  if ((isLocal || isAnythingLLM) && !localLlmEndpoint) {
+    throw new Error('No local LLM endpoint configured. Set vroAiStudio.localLlmEndpoint in Settings.');
+  }
+  if (isAnythingLLM && !localLlmModel) {
+    throw new Error('No workspace slug configured. Set vroAiStudio.localLlmModel to your AnythingLLM workspace slug.');
+  }
 
-  const body = JSON.stringify({
-    model,
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
-    stream: false,
-  });
+  // ── Request body ──────────────────────────────────────────────────────────
+  let body: string;
+  if (isAnythingLLM) {
+    // Native AnythingLLM workspace API — system prompt prepended to message
+    body = JSON.stringify({
+      message: `${systemPrompt}\n\n---\n\n${userPrompt}`,
+      mode: 'chat',
+    });
+  } else if (isLocal) {
+    // OpenAI-compatible format
+    body = JSON.stringify({
+      model: localLlmModel || model,
+      max_tokens: 4096,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt   },
+      ],
+      stream: false,
+    });
+  } else {
+    // Anthropic Claude format
+    body = JSON.stringify({
+      model,
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+      stream: false,
+    });
+  }
+
+  // ── Headers ───────────────────────────────────────────────────────────────
+  const headers: Record<string, string | number> = {
+    'Content-Type':   'application/json',
+    'Content-Length': Buffer.byteLength(body),
+  };
+  if (isAnythingLLM || isLocal) {
+    if (localLlmApiKey) {
+      headers['Authorization'] = `Bearer ${localLlmApiKey}`;
+    }
+  } else {
+    headers['x-api-key']         = apiKey;
+    headers['anthropic-version'] = '2023-06-01';
+  }
+
+  // ── Endpoint ──────────────────────────────────────────────────────────────
+  let activeEndpoint: string;
+  if (isAnythingLLM) {
+    const base = localLlmEndpoint.replace(/\/$/, '');
+    activeEndpoint = `${base}/api/v1/workspace/${localLlmModel}/chat`;
+  } else if (isLocal) {
+    activeEndpoint = localLlmEndpoint;
+  } else {
+    activeEndpoint = endpoint;
+  }
 
   return new Promise((resolve, reject) => {
-    const url = new URL(endpoint);
+    const url = new URL(activeEndpoint);
     const transport = url.protocol === 'https:' ? https : http;
 
     let settled = false;
@@ -63,12 +124,7 @@ export async function callClaude(
         port: url.port || (url.protocol === 'https:' ? 443 : 80),
         path: url.pathname,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Length': Buffer.byteLength(body),
-        },
+        headers,
       },
       (res) => {
         let data = '';
@@ -86,7 +142,21 @@ export async function callClaude(
           }
           try {
             const parsed = JSON.parse(data);
-            done(() => resolve(parsed.content?.[0]?.text || ''));
+            if (isAnythingLLM) {
+              // Native AnythingLLM response: { textResponse: "..." }
+              const text = (parsed as { textResponse?: string }).textResponse || '';
+              done(() => resolve(text));
+            } else if (isLocal) {
+              // OpenAI-compatible response: { choices: [{ message: { content: "..." } }] }
+              const text = (parsed as { choices?: Array<{ message?: { content?: string } }> })
+                .choices?.[0]?.message?.content || '';
+              done(() => resolve(text));
+            } else {
+              // Anthropic response: { content: [{ text: "..." }] }
+              done(() => resolve(
+                (parsed as { content?: Array<{ text?: string }> }).content?.[0]?.text || ''
+              ));
+            }
           } catch {
             done(() => reject(new Error('Failed to parse API response: ' + data.slice(0, 200))));
           }
